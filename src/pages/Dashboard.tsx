@@ -17,10 +17,15 @@ import {
   Monitor,
   ShieldCheck,
   Zap,
-  Globe
+  Globe,
+  Siren,
+  ShieldAlert,
+  Terminal,
+  Server,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   BarChart, 
   Bar, 
@@ -42,6 +47,7 @@ import { getData } from '../lib/storage';
 export default function Dashboard() {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +55,7 @@ export default function Dashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showSystemStatus, setShowSystemStatus] = useState(false);
+  const [showIncidentCenter, setShowIncidentCenter] = useState(false);
   
   // Real-time presence data just for Dashboard
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
@@ -397,15 +404,22 @@ export default function Dashboard() {
           <p className="text-4xl font-black text-brand-slate group-hover:text-white tracking-tight">14.8%</p>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="lg:col-span-3 bg-white p-8 rounded-[3rem] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.05)] border border-brand-cream-dark group hover:bg-brand-blue transition-all duration-500">
+        <motion.div 
+          variants={itemVariants} 
+          onClick={() => setShowIncidentCenter(true)}
+          className="lg:col-span-3 bg-white p-8 rounded-[3rem] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.05)] border border-brand-cream-dark group hover:bg-brand-red transition-all duration-500 cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-8">
              <div className="p-3 bg-brand-cream-dark rounded-2xl group-hover:bg-white/20 transition-colors">
                <AlertTriangle className="h-6 w-6 text-brand-orange group-hover:text-white" />
              </div>
              <span className="px-3 py-1 rounded-full text-[9px] font-black group-hover:text-white bg-brand-orange/10 group-hover:bg-white/20 text-brand-orange uppercase">Crit-P1</span>
           </div>
-          <p className="text-[10px] font-black text-gray-400 group-hover:text-white/60 uppercase tracking-[0.2em] mb-2">Active Incidents</p>
-          <p className="text-4xl font-black text-brand-slate group-hover:text-white tracking-tight">{delayed}</p>
+          <p className="text-[10px] font-black text-gray-400 group-hover:text-white/60 uppercase tracking-[0.2em] mb-2 text-left">Active Incidents</p>
+          <div className="flex items-baseline space-x-3">
+            <p className="text-4xl font-black text-brand-slate group-hover:text-white tracking-tight">{delayed}</p>
+            <span className="text-[10px] font-black text-brand-red group-hover:text-white/70 uppercase tracking-widest animate-pulse">Critical SLA</span>
+          </div>
         </motion.div>
 
         <motion.div variants={itemVariants} className="lg:col-span-6 bg-[#0F172A] p-10 rounded-[3rem] shadow-2xl shadow-brand-slate/30 text-white relative overflow-hidden group">
@@ -432,6 +446,140 @@ export default function Dashboard() {
            </div>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {showIncidentCenter && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowIncidentCenter(false)}
+              className="absolute inset-0 bg-brand-slate/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row h-[85vh] max-h-[800px]"
+            >
+              {/* Sidebar do Modal */}
+              <div className="w-full md:w-80 bg-brand-red p-10 text-white flex flex-col justify-between border-r border-brand-red-dark">
+                <div>
+                  <div className="p-4 bg-white/10 rounded-2xl w-fit mb-8 border border-white/20">
+                    <Siren className="h-8 w-8 text-white animate-pulse" />
+                  </div>
+                  <h2 className="text-3xl font-black tracking-tighter mb-4 uppercase">Incident Center</h2>
+                  <p className="text-sm font-bold text-white/60 leading-relaxed uppercase tracking-wider mb-8">Gestão de resposta a falhas críticas e desvios de SLA em tempo real.</p>
+                  
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-2 h-2 rounded-full bg-white animate-ping"></div>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{delayed} Incidências Ativas</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-2 h-2 rounded-full bg-white/30"></div>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Protocolo: P-RED-SLA</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-white/10">
+                   <div className="p-4 bg-brand-red-dark/30 rounded-2xl border border-white/10">
+                      <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Automated Alert</p>
+                      <p className="text-xs font-bold leading-relaxed italic">"Sistema detetou latência em {delayed} projetos. Ação imediata recomendada."</p>
+                   </div>
+                </div>
+              </div>
+
+              {/* Conteúdo do Modal */}
+              <div className="flex-1 p-10 overflow-auto bg-gray-50 flex flex-col">
+                <div className="flex justify-between items-center mb-10">
+                   <div>
+                      <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Queue Overview</h3>
+                      <p className="text-2xl font-black text-brand-slate tracking-tight">Incidências Críticas de SLA</p>
+                   </div>
+                   <button 
+                     onClick={() => setShowIncidentCenter(false)}
+                     className="p-3 bg-white border border-brand-cream-dark rounded-2xl text-gray-400 hover:text-brand-slate transition-all hover:shadow-md"
+                   >
+                     <X className="h-5 w-5" />
+                   </button>
+                </div>
+
+                <div className="space-y-4 flex-1">
+                   {projects.filter(p => {
+                      if (p.status === 'concluido' || !p.endDate) return false;
+                      const end = new Date(p.endDate);
+                      return end < today;
+                   }).length > 0 ? (
+                     projects.filter(p => {
+                        if (p.status === 'concluido' || !p.endDate) return false;
+                        const end = new Date(p.endDate);
+                        return end < today;
+                     }).map(p => {
+                        const daysLate = Math.floor((today.getTime() - new Date(p.endDate!).getTime()) / (1000 * 60 * 60 * 24));
+                        return (
+                          <motion.div 
+                            key={p.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="bg-white p-6 rounded-3xl border border-brand-cream-dark hover:border-brand-red/30 transition-all group"
+                          >
+                            <div className="flex items-center justify-between">
+                               <div className="flex items-center space-x-4">
+                                  <div className="p-3 bg-brand-red/5 rounded-2xl group-hover:bg-brand-red group-hover:text-white transition-all text-brand-red">
+                                     <ShieldAlert className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                     <h4 className="text-sm font-black text-brand-slate uppercase tracking-tight mb-1">{p.name}</h4>
+                                     <div className="flex items-center space-x-4">
+                                        <p className="text-[10px] font-bold text-gray-400 flex items-center">
+                                           <Clock className="w-3 h-3 mr-1" /> SLA Vencido há {daysLate} dias
+                                        </p>
+                                        <p className="text-[10px] font-black text-brand-red uppercase tracking-widest bg-brand-red/10 px-2 py-0.5 rounded">Crit-P1</p>
+                                     </div>
+                                  </div>
+                               </div>
+                               <button 
+                                 onClick={() => navigate('/projects')} 
+                                 className="px-5 py-2.5 bg-brand-slate text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-red transition-all shadow-lg shadow-brand-slate/10"
+                               >
+                                 Investigar
+                               </button>
+                            </div>
+                          </motion.div>
+                        );
+                     })
+                   ) : (
+                     <div className="h-full flex flex-col items-center justify-center text-center p-12">
+                        <div className="p-6 bg-brand-green/10 rounded-full mb-6">
+                           <ShieldCheck className="h-12 w-12 text-brand-green" />
+                        </div>
+                        <h4 className="text-xl font-black text-brand-slate mb-2">Paz no Ecossistema</h4>
+                        <p className="text-sm font-bold text-gray-400 max-w-xs">Não foram detetadas incidências de SLA neste momento. O Kernel está em harmonia.</p>
+                     </div>
+                   )}
+                </div>
+
+                <div className="mt-10 p-6 bg-brand-slate rounded-3xl text-white flex items-center justify-between border border-white/5">
+                   <div className="flex items-center space-x-4">
+                      <Terminal className="h-5 w-5 text-brand-green" />
+                      <div>
+                         <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">Terminal de Resposta</p>
+                         <p className="text-[10px] font-bold text-white/80">Monitorização automática EFATA-AI ativa.</p>
+                      </div>
+                   </div>
+                   <div className="flex items-center space-x-2">
+                       <div className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse"></div>
+                       <span className="text-[9px] font-black uppercase tracking-widest text-brand-green">Online</span>
+                   </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

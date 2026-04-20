@@ -1,4 +1,4 @@
-import { Project, Budget } from '../types';
+import { Project, Budget, BudgetItem } from '../types';
 import { User } from '../contexts/AuthContext';
 
 const STORAGE_KEYS = {
@@ -98,7 +98,7 @@ const initialProjects: Project[] = [
     description: 'Implementação de Data Lake para processamento analítico massivo.',
     client: 'Grupo Logístico',
     startDate: '2026-01-15',
-    endDate: '2026-05-10',
+    endDate: '2026-03-30',
     budget: 75000,
     priority: 'media',
     category: 'DATA',
@@ -169,6 +169,29 @@ const initialUsers: User[] = [
   }
 ];
 
+const initialBudgets: Budget[] = [
+  {
+    id: 'b1',
+    projectId: '1',
+    name: 'Orçamento Infra Cloud - Q2',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'b2',
+    projectId: '4',
+    name: 'Desenvolvimento Core Banking',
+    createdAt: new Date().toISOString()
+  }
+];
+
+const initialBudgetItems: BudgetItem[] = [
+  { id: 'bi1', budgetId: 'b1', description: 'Instâncias EC2 (M5.large)', amount: 1200, type: 'despesa', createdAt: new Date().toISOString() },
+  { id: 'bi2', budgetId: 'b1', description: 'Storage S3 (5TB)', amount: 450, type: 'despesa', createdAt: new Date().toISOString() },
+  { id: 'bi3', budgetId: 'b1', description: 'Consultoria Cloud - Setup', amount: 5000, type: 'receita', createdAt: new Date().toISOString() },
+  { id: 'bi4', budgetId: 'b2', description: 'Licença iOS Developer', amount: 99, type: 'despesa', createdAt: new Date().toISOString() },
+  { id: 'bi5', budgetId: 'b2', description: 'Fase 1: Prototipagem', amount: 15000, type: 'receita', createdAt: new Date().toISOString() },
+];
+
 export const seedStorage = () => {
   // Always inject the beautiful mock projects to look awesome in the presentation/demo
   // We will force overwrite `efata_projects` if it does not contain the newest mock data
@@ -215,14 +238,45 @@ export const seedStorage = () => {
   if (!localStorage.getItem(STORAGE_KEYS.PREFERENCES)) {
     localStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify({ theme: 'light', notifications: true }));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.BUDGETS)) {
-    localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.BUDGETS) || JSON.parse(localStorage.getItem(STORAGE_KEYS.BUDGETS) || '[]').length === 0) {
+    localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(initialBudgets));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS)) {
-    localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS) || JSON.parse(localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS) || '[]').length === 0) {
+    localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(initialBudgetItems));
   }
   if (!localStorage.getItem(STORAGE_KEYS.LOGS)) {
-    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify([]));
+    const mockLogs = [
+      {
+         id: 'L01', userId: 'admin1', userName: 'Francisco Sita', action: 'CREATE', entity: 'PROJECT', entityId: 'p1', details: 'Core system boot. Projetos de migração instanciados na cloud.', createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+      },
+      {
+         id: 'L02', userId: 'admin2', userName: 'Celso Sebastião', action: 'UPDATE', entity: 'TASK', entityId: 't1', details: 'Sincronização forçada do pacote ISO 8583. Estado atualizado com sucesso.', createdAt: new Date(Date.now() - 40000000).toISOString()
+      },
+      {
+         id: 'L03', userId: 'sys', userName: 'System', action: 'UPLOAD', entity: 'ATTACHMENT', entityId: 'a1', details: 'Backup de rotina guardado em Secure Env.', createdAt: new Date(Date.now() - 10000000).toISOString()
+      },
+      {
+         id: 'L04', userId: 'admin1', userName: 'Francisco Sita', action: 'CREATE', entity: 'USER', entityId: 'u5', details: 'Nova credencial de Gestor IT gerada. (Nível B).', createdAt: new Date(Date.now() - 500000).toISOString()
+      },
+      {
+         id: 'L05', userId: 'sys', userName: 'Security Daemon', action: 'DELETE', entity: 'BUDGET', entityId: 'b9', details: 'Alocação órfã neutralizada via script de integridade de dados.', createdAt: new Date(Date.now() - 150000).toISOString()
+      }
+    ];
+    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(mockLogs));
+  } else {
+    // If not enough interesting mock logs exist, refill
+    const curLogs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS) || '[]');
+    if (curLogs.length === 0) {
+      const mockLogs = [
+        {
+           id: 'L01', userId: 'admin1', userName: 'Francisco Sita', action: 'CREATE', entity: 'PROJECT', entityId: 'p1', details: 'Boot do sistema central. Projetos vitais alinhados.', createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+        },
+        {
+           id: 'L02', userId: 'admin2', userName: 'Celso Sebastião', action: 'UPDATE', entity: 'TASK', entityId: 't1', details: 'Permissões do cluster re-balanceadas.', createdAt: new Date(Date.now() - 40000000).toISOString()
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(mockLogs));
+    }
   }
 };
 
