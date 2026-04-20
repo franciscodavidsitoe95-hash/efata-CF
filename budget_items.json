@@ -1,0 +1,6 @@
+[
+  { "id": "bi1", "budgetId": "b1", "description": "Cloud infra (Azure)", "amount": 15000, "type": "despesa", "createdAt": "2026-04-01T09:00:00Z" },
+  { "id": "bi2", "budgetId": "b1", "description": "Serviços Consultoria", "amount": 20000, "type": "despesa", "createdAt": "2026-04-01T09:30:00Z" },
+  { "id": "bi3", "budgetId": "b1", "description": "Budget de Emergência", "amount": 10000, "type": "receita", "createdAt": "2026-04-01T10:00:00Z" },
+  { "id": "bi4", "budgetId": "b2", "description": "Software Licenses", "amount": 5000, "type": "despesa", "createdAt": "2026-04-10T09:00:00Z" }
+]

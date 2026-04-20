@@ -1,0 +1,26 @@
+[
+  {
+    "id": "35f718de-4fec-488e-b83b-9a1eff0d260c",
+    "email": "fas@gmail.com",
+    "passwordHash": "$2b$10$8w.wtVAvFenGHmUUSJFGk.6cIMKt1Phk1qPLvFC6TPw3h2.62Eua.",
+    "createdAt": "2026-04-17T11:18:47.079Z",
+    "name": "Fas Admin",
+    "role": "admin"
+  },
+  {
+    "id": "c182f1c9-a1e0-4d13-98ff-00e7e7d58ec7",
+    "name": "francisco",
+    "email": "fra@gmail.com",
+    "passwordHash": "$2b$10$BBXCPuSZG1mdaXX.UNcqSuozugmUHNGxElsXNGQEd8t/S4mXb6m8i",
+    "role": "admin",
+    "createdAt": "2026-04-17T11:26:29.284Z"
+  },
+  {
+    "id": "779b1681-90a4-452e-a945-4affec124a92",
+    "email": "admin@sistema.com",
+    "name": "Admin Maestro",
+    "passwordHash": "$2b$10$uvTNXUqUqDcN1p4FMCGbRubOAAujCJ9PRKTxVd.B/6lHuPLsSJi1C",
+    "role": "admin",
+    "createdAt": "2026-04-17T11:34:41.362Z"
+  }
+]

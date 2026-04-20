@@ -1,0 +1,4 @@
+[
+  { "id": "b1", "projectId": "p1", "name": "Orçamento Base", "createdAt": "2026-04-01T08:00:00Z" },
+  { "id": "b2", "projectId": "p2", "name": "Orçamento Auditoria", "createdAt": "2026-04-10T08:00:00Z" }
+]
