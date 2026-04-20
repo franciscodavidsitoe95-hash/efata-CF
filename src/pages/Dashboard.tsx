@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { 
@@ -43,6 +44,31 @@ export default function Dashboard() {
   const { addToast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // New states for Header elements
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showSystemStatus, setShowSystemStatus] = useState(false);
+  
+  // Real-time presence data just for Dashboard
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (showSystemStatus && (user?.email === 'franciscodavidsitoe95@gmail.com' || user?.email === 'celsosebastiao@gmail.com')) {
+      const getPresence = () => {
+        const presence = JSON.parse(localStorage.getItem('efata_presence') || '{}');
+        const now = Date.now();
+        const active = Object.entries(presence)
+          .map(([email, data]: [string, any]) => ({ email, ...data }))
+          .filter(u => now - u.lastSeen < 120000); // 2 minutes window
+        setOnlineUsers(active);
+      };
+      getPresence();
+      interval = setInterval(getPresence, 10000); // refresh every 10s while open
+    }
+    return () => clearInterval(interval);
+  }, [showSystemStatus, user]);
   const alertedDelayed = useRef(false);
 
   useEffect(() => {
@@ -140,19 +166,105 @@ export default function Dashboard() {
           />
         </div>
         
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-6 relative">
           <div className="flex items-center space-x-2">
-            <button className="p-2.5 bg-white border border-brand-cream-dark rounded-xl text-gray-500 hover:text-brand-indigo transition-all relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-brand-orange rounded-full border-2 border-white"></span>
-            </button>
-            <button className="p-2.5 bg-white border border-brand-cream-dark rounded-xl text-gray-500 hover:text-brand-indigo transition-all">
-              <HelpCircle className="h-5 w-5" />
-            </button>
+            
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <button onClick={() => setShowNotifications(!showNotifications)} className="p-2.5 bg-white border border-brand-cream-dark rounded-xl text-gray-500 hover:text-brand-indigo transition-all relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-brand-orange rounded-full border-2 border-white"></span>
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute top-full right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-brand-cream-dark p-6 z-50 animate-in fade-in slide-in-from-top-4">
+                  <h3 className="text-[10px] font-black text-brand-slate uppercase tracking-[0.2em] mb-4">Notificações Recentes</h3>
+                  <div className="space-y-4">
+                    <div className="flex gap-3 items-start">
+                      <div className="w-2 h-2 rounded-full bg-brand-orange mt-1.5"></div>
+                      <div>
+                        <p className="text-sm font-bold text-brand-slate">Alerta de Prevenção</p>
+                        <p className="text-xs text-gray-400 mt-1">Sincronização de rede verificada com pequenos atrasos (Crit-P1).</p>
+                        <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mt-2">Há 5 min</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-2 h-2 rounded-full bg-brand-indigo mt-1.5"></div>
+                      <div>
+                        <p className="text-sm font-bold text-brand-slate">Atualização IT</p>
+                        <p className="text-xs text-gray-400 mt-1">O pacote de rede 3.1 da Efata foi injetado com sucesso.</p>
+                        <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mt-2">Hoje</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Help Dropdown */}
+            <div className="relative">
+              <button onClick={() => setShowHelp(!showHelp)} className="p-2.5 bg-white border border-brand-cream-dark rounded-xl text-gray-500 hover:text-brand-indigo transition-all">
+                <HelpCircle className="h-5 w-5" />
+              </button>
+              
+              {showHelp && (
+                <div className="absolute top-full right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl border border-brand-cream-dark p-6 z-50 animate-in fade-in slide-in-from-top-4">
+                  <h3 className="text-[10px] font-black text-brand-slate uppercase tracking-[0.2em] mb-4">Ajuda Rápida</h3>
+                  <div className="space-y-3">
+                    <a href="mailto:suporte@efata.it" className="block text-sm font-bold text-brand-indigo hover:underline">Contatar Equipe de IT</a>
+                    <a href="#" className="block text-sm font-bold text-gray-500 hover:text-brand-slate transition-colors">Documentação da API</a>
+                    <a href="#" className="block text-sm font-bold text-gray-500 hover:text-brand-slate transition-colors">Estado do Servidor</a>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
-          <div className="flex items-center space-x-3 bg-brand-indigo/5 px-4 py-2 rounded-2xl border border-brand-indigo/10">
-            <Monitor className="h-4 w-4 text-brand-indigo" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-indigo">Node-01 Active</span>
+          
+          {/* Node Active & Online Users Dropdown */}
+          <div className="relative">
+            <button onClick={() => setShowSystemStatus(!showSystemStatus)} className="flex items-center space-x-3 bg-brand-indigo/5 hover:bg-brand-indigo/10 transition-colors px-4 py-2 rounded-2xl border border-brand-indigo/10 cursor-pointer">
+              <Monitor className="h-4 w-4 text-brand-indigo" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-indigo">Node-01 Active</span>
+            </button>
+            
+            {showSystemStatus && (
+              <div className="absolute top-full right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-brand-cream-dark p-6 z-50 animate-in fade-in slide-in-from-top-4">
+                <h3 className="text-[10px] font-black text-brand-slate uppercase tracking-[0.2em] mb-4 flex items-center">
+                  <Activity className="w-3 h-3 text-brand-green mr-2 animate-pulse" /> Estado do Cluster
+                </h3>
+                <div className="mb-6 space-y-2">
+                  <p className="flex justify-between text-xs font-bold"><span className="text-gray-400">Memory:</span> <span className="text-brand-slate">32GB / 64GB Ram</span></p>
+                  <p className="flex justify-between text-xs font-bold"><span className="text-gray-400">Load:</span> <span className="text-brand-slate">1.2ms Avg</span></p>
+                  <p className="flex justify-between text-xs font-bold"><span className="text-gray-400">Uptime:</span> <span className="text-brand-slate">99.98%</span></p>
+                </div>
+
+                {(user?.email === 'franciscodavidsitoe95@gmail.com' || user?.email === 'celsosebastiao@gmail.com') ? (
+                  <>
+                    <h3 className="text-[10px] font-black text-brand-indigo uppercase tracking-[0.2em] mb-4 border-t border-brand-cream-dark pt-4">Visualização de Administradores</h3>
+                    <p className="text-xs text-gray-400 font-medium mb-3 leading-relaxed">Conexões ativas no ecossistema (Tempo real)</p>
+                    
+                    {onlineUsers.length > 0 ? (
+                      <div className="space-y-3">
+                        {onlineUsers.map(u => (
+                          <div key={u.email} className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-brand-slate flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
+                              {u.name}
+                            </span>
+                            <span className="text-gray-400 bg-gray-100 px-2 py-0.5 rounded text-[9px] uppercase tracking-wider">{u.role}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">A detetar conexões...</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-[10px] mt-4 font-black text-gray-300 uppercase tracking-widest border-t border-brand-cream-dark pt-4">Privilégios Restritos para Network Data</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </motion.header>
@@ -308,15 +420,15 @@ export default function Dashboard() {
                    {[1,2,3,4,5,6].map(i => <motion.div animate={{ height: [12, 28, 12], transition: { repeat: Infinity, duration: 1 + i * 0.2 } }} key={i} className={`w-2 h-7 rounded-full ${i < 6 ? 'bg-brand-green shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-brand-green/20'}`}></motion.div>)}
                 </div>
               </div>
-              <div className="mt-10 flex items-center justify-between">
-                 <div className="flex items-center space-x-4">
-                   <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
-                     <ShieldCheck className="h-6 w-6 text-brand-green" />
-                   </div>
-                   <p className="text-[10px] font-bold text-white/50 leading-relaxed uppercase tracking-widest max-w-[180px]">Automated Security Protocols: ACTIVE</p>
+                 <div className="mt-10 flex flex-col sm:flex-row items-center sm:justify-between gap-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
+                        <ShieldCheck className="h-6 w-6 text-brand-green" />
+                      </div>
+                      <p className="text-[10px] font-bold text-white/50 leading-relaxed uppercase tracking-widest max-w-[180px]">Automated Security Protocols: ACTIVE</p>
+                    </div>
+                    <Link to="/logs" className="w-full sm:w-auto text-center bg-brand-indigo hover:bg-brand-blue px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-indigo/20 transform hover:-translate-y-1">View Telemetry</Link>
                  </div>
-                 <button className="bg-brand-indigo hover:bg-brand-blue px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-indigo/20 transform hover:-translate-y-1">View Telemetry</button>
-              </div>
            </div>
         </motion.div>
       </div>

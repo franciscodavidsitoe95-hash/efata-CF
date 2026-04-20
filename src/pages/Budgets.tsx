@@ -17,7 +17,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import type { Project, Budget, BudgetItem } from '../types';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { getData, saveData } from '../lib/storage';
+import { getData, saveData, logAction } from '../lib/storage';
 
 export default function Budgets() {
   const { user } = useAuth();
@@ -118,6 +118,16 @@ export default function Budgets() {
           createdAt: new Date().toISOString()
       };
       saveData('BUDGET_ITEMS', [...allItems, newBudgetItem]);
+      
+      logAction(
+        user?.id || 'sys', 
+        user?.name || 'System', 
+        'CREATE', 
+        'BUDGET', 
+        newBudgetItem.id, 
+        `Fluxo Financeiro adicionado: ${newItem.description} (${newItem.type})`
+      );
+
       addToast('Item adicionado', 'success');
       setShowItemForm(false);
       setNewItem({ description: '', amount: '', type: 'despesa' });
@@ -130,8 +140,21 @@ export default function Budgets() {
   const handleDeleteItem = async (itemId: string) => {
     try {
       const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+      const itemToDelete = allItems.find(i => i.id === itemId);
       const updatedItems = allItems.filter(i => i.id !== itemId);
       saveData('BUDGET_ITEMS', updatedItems);
+      
+      if (itemToDelete) {
+        logAction(
+          user?.id || 'sys', 
+          user?.name || 'System', 
+          'DELETE', 
+          'BUDGET', 
+          itemId, 
+          `Fluxo Financeiro removido: ${itemToDelete.description}`
+        );
+      }
+
       addToast('Item removido', 'success');
       if (selectedBudgetId) fetchItems(selectedBudgetId);
     } catch (err) {

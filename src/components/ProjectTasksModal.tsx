@@ -56,6 +56,17 @@ export function ProjectTasksModal({ project, availableUsers, onClose, onUpdateTa
       setTasks(updatedTasks);
       await onUpdateTasks(project.id, updatedTasks);
 
+      // Log Task Creation
+      const { logAction } = await import('../lib/storage');
+      logAction(
+        'sys', 
+        'System', 
+        'CREATE', 
+        'TASK', 
+        newTask.id, 
+        `Nova Tarefa "${name}" criada para Ativo: ${project.name}`
+      );
+
       addToast(`Tarefa "${name}" criada com sucesso!`, 'success');
       
       setIsAdding(false);
@@ -71,9 +82,23 @@ export function ProjectTasksModal({ project, availableUsers, onClose, onUpdateTa
   const handleDeleteTask = async (taskId: string) => {
     if (!window.confirm('Excluir esta tarefa?')) return;
     try {
+      const taskToDelete = tasks.find(t => t.id === taskId);
       const updatedTasks = tasks.filter(t => t.id !== taskId);
       setTasks(updatedTasks);
       await onUpdateTasks(project.id, updatedTasks);
+      
+      if (taskToDelete) {
+        const { logAction } = await import('../lib/storage');
+        logAction(
+          'sys', 
+          'System', 
+          'DELETE', 
+          'TASK', 
+          taskId, 
+          `Tarefa "${taskToDelete.name}" revogada do Ativo: ${project.name}`
+        );
+      }
+      
       addToast('Tarefa removida', 'info');
     } catch (err) {
       addToast('Erro ao remover tarefa', 'error');
@@ -86,6 +111,16 @@ export function ProjectTasksModal({ project, availableUsers, onClose, onUpdateTa
       const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t);
       setTasks(updatedTasks);
       await onUpdateTasks(project.id, updatedTasks);
+
+      const { logAction } = await import('../lib/storage');
+      logAction(
+        'sys', 
+        'System', 
+        'UPDATE', 
+        'TASK', 
+        taskId, 
+        `Estado da Tarefa "${task?.name}" alterado para ${newStatus} no Ativo: ${project.name}`
+      );
 
       if (newStatus === 'concluida') {
         addToast(`Tarefa "${task?.name}" marcada como concluída!`, 'success');

@@ -6,7 +6,7 @@ import { ProjectTasksModal, Task } from '../components/ProjectTasksModal';
 import { ProjectBudgetsModal } from '../components/ProjectBudgetsModal';
 import { ProjectAttachmentsModal } from '../components/ProjectAttachmentsModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { getData, saveData, seedStorage } from '../lib/storage';
+import { getData, saveData, seedStorage, logAction } from '../lib/storage';
 
 export interface Project {
   id: string;
@@ -149,8 +149,24 @@ export default function Projects() {
     
     if (editingProject) {
         updatedProjects = currentProjects.map((p: Project) => p.id === newProject.id ? newProject : p);
+        logAction(
+          user?.id || 'sys', 
+          user?.name || 'System', 
+          'UPDATE', 
+          'PROJECT', 
+          newProject.id, 
+          `Projeto/Ativo atualizado: ${newProject.name}`
+        );
     } else {
         updatedProjects = [...currentProjects, newProject];
+        logAction(
+          user?.id || 'sys', 
+          user?.name || 'System', 
+          'CREATE', 
+          'PROJECT', 
+          newProject.id, 
+          `Novo projeto/ativo registado: ${newProject.name}`
+        );
     }
 
     saveData('PROJECTS', updatedProjects);
@@ -162,8 +178,21 @@ export default function Projects() {
 
   const handleDelete = async (id: string) => {
     const currentProjects = getData('PROJECTS');
+    const projectToDelete = currentProjects.find((p: Project) => p.id === id);
     const updatedProjects = currentProjects.filter((p: Project) => p.id !== id);
     saveData('PROJECTS', updatedProjects);
+    
+    if (projectToDelete) {
+      logAction(
+        user?.id || 'sys', 
+        user?.name || 'System', 
+        'DELETE', 
+        'PROJECT', 
+        id, 
+        `Projeto/Ativo descontinuado: ${projectToDelete.name}`
+      );
+    }
+    
     await fetchProjects();
     addToast('Ativo descontinuado com sucesso', 'info');
   };

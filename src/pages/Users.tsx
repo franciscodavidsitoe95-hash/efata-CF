@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Pencil, Trash2, Plus, X, Loader2, ShieldAlert, Users as UsersIcon, Fingerprint, Activity } from 'lucide-react';
 import { User, Role } from '../contexts/AuthContext';
-import { getData, saveData } from '../lib/storage';
+import { getData, saveData, logAction } from '../lib/storage';
 
 export default function Users() {
   const { user } = useAuth();
@@ -76,8 +76,23 @@ export default function Users() {
             createdAt: new Date().toISOString()
         };
         saveData('USERS', [...allUsers, newUser]);
+        
+        logAction(
+          user?.id || 'sys', 
+          user?.name || 'System', 
+          'CREATE', 
+          'USER', 
+          newUser.id, 
+          `Credencial gerada: ${newUser.name} (${newUser.role})`
+        );
     } else {
         // Update
+        if (editingUser.isImmutable) {
+            setSubmitError('Credenciais vitais do sistema não podem ser alteradas.');
+            setIsSubmitting(false);
+            return;
+        }
+
         // check if email exists on another user
         if (allUsers.some(u => u.email === email && u.id !== editingUser.id)) {
             setSubmitError('Email já está em uso por outro utilizador.');
@@ -98,6 +113,15 @@ export default function Users() {
             return u;
         });
         saveData('USERS', updatedUsers);
+        
+        logAction(
+          user?.id || 'sys', 
+          user?.name || 'System', 
+          'UPDATE', 
+          'USER', 
+          editingUser.id, 
+          `Credencial modificada: ${editingUser.name}`
+        );
     }
 
     await fetchUsers();
@@ -110,11 +134,31 @@ export default function Users() {
       alert('Impossível auto-terminar sessão administrativa!');
       return;
     }
+    
+    const allUsers = getData('USERS') || [];
+    const userToDelete = allUsers.find(u => u.id === id);
+    
+    if (userToDelete?.isImmutable) {
+      alert('Este é um administrador de sistema vital e não pode ser revogado.');
+      return;
+    }
+
     if (!window.confirm('ALERTA: Deseja revogar permanentemente o acesso deste utilizador?')) return;
 
-    const allUsers = getData('USERS') || [];
     const updatedUsers = allUsers.filter(u => u.id !== id);
     saveData('USERS', updatedUsers);
+    
+    if (userToDelete) {
+      logAction(
+        user?.id || 'sys', 
+        user?.name || 'System', 
+        'DELETE', 
+        'USER', 
+        id, 
+        `Credencial revogada: ${userToDelete.name}`
+      );
+    }
+    
     await fetchUsers();
   };
 
@@ -198,12 +242,19 @@ export default function Users() {
                         </div>
                       </td>
                       <td className="relative whitespace-nowrap py-6 pl-3 pr-10 text-right space-x-4">
-                        <button onClick={() => openModal(u)} className="p-2 rounded-xl text-gray-300 hover:text-brand-indigo hover:bg-brand-indigo/5 transition-all">
-                          <Pencil className="h-4 w-4"/>
-                        </button>
-                        <button onClick={() => handleDelete(u.id)} disabled={u.id === user?.id} className="p-2 rounded-xl text-gray-300 hover:text-brand-red hover:bg-brand-red/5 transition-all disabled:opacity-0 disabled:pointer-events-none">
-                          <Trash2 className="h-4 w-4"/>
-                        </button>
+                        {!u.isImmutable && (
+                          <>
+                            <button onClick={() => openModal(u)} className="p-2 rounded-xl text-gray-300 hover:text-brand-indigo hover:bg-brand-indigo/5 transition-all">
+                              <Pencil className="h-4 w-4"/>
+                            </button>
+                            <button onClick={() => handleDelete(u.id)} disabled={u.id === user?.id} className="p-2 rounded-xl text-gray-300 hover:text-brand-red hover:bg-brand-red/5 transition-all disabled:opacity-0 disabled:pointer-events-none">
+                              <Trash2 className="h-4 w-4"/>
+                            </button>
+                          </>
+                        )}
+                        {u.isImmutable && (
+                          <span className="text-[9px] font-black uppercase text-gray-300 tracking-widest mr-2">SYS ADMIN</span>
+                        )}
                       </td>
                     </tr>
                   ))}

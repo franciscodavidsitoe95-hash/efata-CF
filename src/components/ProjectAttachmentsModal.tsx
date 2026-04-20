@@ -56,6 +56,18 @@ export function ProjectAttachmentsModal({ project, onClose, onUpdate }: ProjectA
 
       saveData('PROJECTS', updatedProjects);
       
+      const { useAuth } = await import('../contexts/AuthContext');
+      const { logAction } = await import('../lib/storage');
+      const currentUserStr = localStorage.getItem('auth');
+      logAction(
+        currentUserStr || 'sys', 
+        'System', 
+        'UPLOAD', 
+        'ATTACHMENT', 
+        newAttachment.id, 
+        `Ficheiro "${newAttachment.originalName}" anexado ao Ativo: ${project.name}`
+      );
+      
       setAttachments(prev => [...prev, newAttachment]);
       addToast('Arquivo anexado com sucesso', 'success');
       onUpdate();
@@ -80,6 +92,20 @@ export function ProjectAttachmentsModal({ project, onClose, onUpdate }: ProjectA
       });
 
       saveData('PROJECTS', updatedProjects);
+
+      const attachmentToDelete = attachments.find(a => a.id === attachmentId);
+      if (attachmentToDelete) {
+        const { logAction } = await import('../lib/storage');
+        const currentUserStr = localStorage.getItem('auth');
+        logAction(
+          currentUserStr || 'sys', 
+          'System', 
+          'DELETE', 
+          'ATTACHMENT', 
+          attachmentId, 
+          `Ficheiro "${attachmentToDelete.originalName}" removido do Ativo: ${project.name}`
+        );
+      }
 
       setAttachments(prev => prev.filter(a => a.id !== attachmentId));
       addToast('Arquivo apagado', 'success');

@@ -9,6 +9,7 @@ export interface User {
   role: Role;
   createdAt: string;
   password?: string;
+  isImmutable?: boolean;
 }
 
 interface AuthContextType {
@@ -52,6 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshUser();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      const updatePresence = () => {
+        const presence = JSON.parse(localStorage.getItem('efata_presence') || '{}');
+        presence[user.email] = {
+           name: user.name,
+           role: user.role,
+           lastSeen: Date.now()
+        };
+        localStorage.setItem('efata_presence', JSON.stringify(presence));
+      };
+      
+      updatePresence();
+      const interval = setInterval(updatePresence, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, loading, refreshUser, logout }}>

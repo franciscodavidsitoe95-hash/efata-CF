@@ -56,17 +56,17 @@ export default function Auth() {
         }
         
         // In a real app we'd hash the password
-        if (user.password !== password && user.role !== 'admin') { 
-             // Allow admin to login without pwd check as per previous mock (or enforce it if they set it)
-            if(user.password && user.password !== password) {
-                setError('Credenciais inválidas.');
-                setIsLoading(false);
-                return;
-            } else if (!user.password && password) {
-               // they are admin and hasn't set pwd yet, let them through
-            }
+        if (user.password && user.password !== password) { 
+             setError('Palavra-passe incorreta.');
+             setIsLoading(false);
+             return;
+        } else if (!user.password && password !== 'admin') { // Fallback for old default admin if it had no pwd
+             if(user.email !== 'admin@sistema.com') { // only for legacy reasons if applicable
+                 setError('Palavra-passe incorreta.');
+                 setIsLoading(false);
+                 return;
+             }
         }
-
         localStorage.setItem('auth', user.id);
     }
 
