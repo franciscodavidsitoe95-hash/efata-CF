@@ -36,6 +36,7 @@ import {
 } from 'recharts';
 import type { Project } from './Projects';
 import type { Task } from '../components/ProjectTasksModal';
+import { getData } from '../lib/storage';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -65,17 +66,8 @@ export default function Dashboard() {
   }, [loading, projects]);
 
   const fetchProjects = async () => {
-    try {
-      const res = await fetch('/api/projects');
-      if (res.ok) {
-        const data = await res.json();
-        setProjects(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch projects', err);
-    } finally {
-      setLoading(false);
-    }
+    setProjects(getData('PROJECTS'));
+    setLoading(false);
   };
 
   const calculateProgress = (tasks: Task[] = []) => {

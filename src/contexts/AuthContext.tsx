@@ -8,6 +8,7 @@ export interface User {
   email: string;
   role: Role;
   createdAt: string;
+  password?: string;
 }
 
 interface AuthContextType {
@@ -25,10 +26,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     setLoading(true);
-    // Simulate user check based on localStorage
-    const isAuthenticated = localStorage.getItem('auth') === 'true';
-    if (isAuthenticated) {
-        setUser({ id: '1', name: 'User', email: 'user@efata.it', role: 'admin', createdAt: '2026-01-01' });
+    const authId = localStorage.getItem('auth');
+    if (authId) {
+        const users = JSON.parse(localStorage.getItem('efata_users') || '[]');
+        const foundUser = users.find((u: any) => u.id === authId);
+        if (foundUser) {
+            setUser(foundUser);
+        } else if (authId === 'true') {
+             // Fallback for old mock auth
+             setUser({ id: '1', name: 'User', email: 'user@efata.it', role: 'admin', createdAt: '2026-01-01' });
+        } else {
+             setUser(null);
+        }
     } else {
         setUser(null);
     }

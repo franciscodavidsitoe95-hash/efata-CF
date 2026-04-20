@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Pencil, Trash2, Plus, X, Loader2, ShieldAlert, Users as UsersIcon, Fingerprint, Activity } from 'lucide-react';
 import { User, Role } from '../contexts/AuthContext';
+import { getData, saveData } from '../lib/storage';
 
 export default function Users() {
   const { user } = useAuth();
@@ -19,17 +20,8 @@ export default function Users() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchUsers = async () => {
-    try {
-      const res = await fetch('/api/users');
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch users', err);
-    } finally {
-      setLoading(false);
-    }
+    setUsers(getData('USERS') || []);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -65,33 +57,52 @@ export default function Users() {
     setSubmitError('');
     setIsSubmitting(true);
 
-    try {
-      const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
-      const method = editingUser ? 'PUT' : 'POST';
-      
-      const payload: any = { name, email, role };
-      if (!editingUser || password) {
-        payload.password = password;
-      }
+    const allUsers = getData('USERS') || [];
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    if (!editingUser) {
+        // Create
+        // check if email exists
+        if (allUsers.some(u => u.email === email)) {
+            setSubmitError('Email já está em uso.');
+            setIsSubmitting(false);
+            return;
+        }
+        const newUser: User = {
+            id: Math.random().toString(36).substr(2, 9),
+            name,
+            email,
+            password,
+            role,
+            createdAt: new Date().toISOString()
+        };
+        saveData('USERS', [...allUsers, newUser]);
+    } else {
+        // Update
+        // check if email exists on another user
+        if (allUsers.some(u => u.email === email && u.id !== editingUser.id)) {
+            setSubmitError('Email já está em uso por outro utilizador.');
+            setIsSubmitting(false);
+            return;
+        }
 
-      if (res.ok) {
-        await fetchUsers();
-        setIsModalOpen(false);
-      } else {
-        const data = await res.json();
-        setSubmitError(data.error || 'Erro ao processar requisição');
-      }
-    } catch (err) {
-      setSubmitError('Erro de rede. Tente novamente.');
-    } finally {
-      setIsSubmitting(false);
+        const updatedUsers = allUsers.map(u => {
+            if (u.id === editingUser.id) {
+                return {
+                    ...u,
+                    name,
+                    email,
+                    role,
+                    ...(password ? { password } : {})
+                };
+            }
+            return u;
+        });
+        saveData('USERS', updatedUsers);
     }
+
+    await fetchUsers();
+    setIsModalOpen(false);
+    setIsSubmitting(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -101,17 +112,10 @@ export default function Users() {
     }
     if (!window.confirm('ALERTA: Deseja revogar permanentemente o acesso deste utilizador?')) return;
 
-    try {
-      const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchUsers();
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Erro ao deletar usuário');
-      }
-    } catch (err) {
-      alert('Erro de conexão ao deletar');
-    }
+    const allUsers = getData('USERS') || [];
+    const updatedUsers = allUsers.filter(u => u.id !== id);
+    saveData('USERS', updatedUsers);
+    await fetchUsers();
   };
 
   if (loading) {

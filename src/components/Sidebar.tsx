@@ -125,10 +125,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
                 Settings / Config
               </div>
               <div className="space-y-1.5">
-                <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-brand-indigo hover:bg-white transition-all">
-                  <Settings className="h-4 w-4 text-gray-400" />
-                  <span>Preferências</span>
-                </button>
+                <NavItem item={{ label: 'Preferências', path: '/preferences', icon: Settings, color: 'text-gray-400' }} />
               </div>
             </div>
           </nav>

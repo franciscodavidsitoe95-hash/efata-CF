@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { getData, saveData } from '../lib/storage';
 
 export default function Auth() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(location.pathname === '/register');
   const [email, setEmail] = useState('');
@@ -24,12 +27,52 @@ export default function Auth() {
     setIsLoading(true);
     setError('');
 
-    // Simulate Auth
-    setTimeout(() => {
-        localStorage.setItem('auth', 'true');
-        navigate('/dashboard');
-        setIsLoading(false);
-    }, 1000);
+    const users = getData('USERS') || [];
+
+    if (isSignUp) {
+        if (users.find((u: any) => u.email === email)) {
+            setError('Email já cadastrado.');
+            setIsLoading(false);
+            return;
+        }
+
+        const newUser = {
+            id: Math.random().toString(36).substring(2, 9),
+            name,
+            email,
+            password,
+            role: 'funcionario',
+            createdAt: new Date().toISOString()
+        };
+
+        saveData('USERS', [...users, newUser]);
+        localStorage.setItem('auth', newUser.id);
+    } else {
+        const user = users.find((u: any) => u.email === email);
+        if (!user) {
+            setError('Credenciais inválidas.');
+            setIsLoading(false);
+            return;
+        }
+        
+        // In a real app we'd hash the password
+        if (user.password !== password && user.role !== 'admin') { 
+             // Allow admin to login without pwd check as per previous mock (or enforce it if they set it)
+            if(user.password && user.password !== password) {
+                setError('Credenciais inválidas.');
+                setIsLoading(false);
+                return;
+            } else if (!user.password && password) {
+               // they are admin and hasn't set pwd yet, let them through
+            }
+        }
+
+        localStorage.setItem('auth', user.id);
+    }
+
+    await refreshUser(); // Force refresh context
+    navigate('/dashboard');
+    setIsLoading(false);
   };
 
   const toggleMode = () => {
@@ -37,6 +80,7 @@ export default function Auth() {
     const newPath = isSignUp ? '/login' : '/register';
     navigate(newPath, { replace: true });
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-cream-dark p-4 md:p-8 font-sans">

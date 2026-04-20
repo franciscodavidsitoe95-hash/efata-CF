@@ -3,13 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Sidebar } from './components/Sidebar';
 import { Menu, X } from 'lucide-react';
+import { seedStorage } from './lib/storage';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
@@ -17,6 +18,7 @@ import Projects from './pages/Projects';
 import Logs from './pages/Logs';
 import Reports from './pages/Reports';
 import Budgets from './pages/Budgets';
+import Preferences from './pages/Preferences';
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -51,6 +53,10 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    seedStorage();
+  }, []);
+
   return (
     <ToastProvider>
       <AuthProvider>
@@ -109,6 +115,15 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <MainLayout><Logs /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/preferences" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><Preferences /></MainLayout>
                 </ProtectedRoute>
               } 
             />

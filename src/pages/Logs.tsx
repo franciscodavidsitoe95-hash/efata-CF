@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Terminal, Loader2, User, Clock, Tag, ShieldCheck, Database, Cpu } from 'lucide-react';
 
+import { getData } from '../lib/storage';
+
 interface ActionLog {
   id: string;
   userId: string;
@@ -19,19 +21,11 @@ export default function Logs() {
   const [loading, setLoading] = useState(true);
 
   const fetchLogs = async () => {
-    try {
-      const res = await fetch('/api/logs');
-      if (res.ok) {
-        const data = await res.json();
-        // Sort by date descending
-        const sorted = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setLogs(sorted);
-      }
-    } catch (err) {
-      console.error('Failed to fetch logs', err);
-    } finally {
-      setLoading(false);
-    }
+    // In a real SPA with logs, we'd persist these too, 
+    // but for now we'll just show what is in localStorage
+    const storedLogs = getData('LOGS') || [];
+    setLogs(storedLogs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    setLoading(false);
   };
 
   useEffect(() => {

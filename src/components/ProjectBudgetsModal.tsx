@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, CheckCircle2, Circle, Clock, DollarSign, TrendingUp, TrendingDown, Trash } from 'lucide-react';
 import type { Project } from '../pages/Projects';
+import { getData, saveData } from '../lib/storage';
 
 export interface BudgetItem {
   id: string;
@@ -50,50 +51,38 @@ export function ProjectBudgetsModal({ project, onClose }: ProjectBudgetsModalPro
   }, [selectedBudget]);
 
   const fetchBudgets = async () => {
-    try {
-      const res = await fetch(`/api/projects/${project.id}/budgets`);
-      if (res.ok) {
-        const data = await res.json();
-        setBudgets(data);
-        if (data.length > 0 && !selectedBudget) {
-          setSelectedBudget(data[0]);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    const allBudgets: Budget[] = getData('BUDGETS') || [];
+    const projectBudgets = allBudgets.filter(b => b.projectId === project.id);
+    setBudgets(projectBudgets);
+    if (projectBudgets.length > 0 && !selectedBudget) {
+      setSelectedBudget(projectBudgets[0]);
     }
+    setLoading(false);
   };
 
   const fetchBudgetItems = async (budgetId: string) => {
-    try {
-      const res = await fetch(`/api/budgets/${budgetId}/items`);
-      if (res.ok) {
-        const data = await res.json();
-        setBudgetItems(data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+    const budgetItemsData = allItems.filter(i => i.budgetId === budgetId);
+    setBudgetItems(budgetItemsData);
   };
 
   const handleCreateBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBudgetName) return;
     try {
-      const res = await fetch(`/api/projects/${project.id}/budgets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newBudgetName })
-      });
-      if (res.ok) {
-        const newlyCreated = await res.json();
-        setBudgets([...budgets, newlyCreated]);
-        setSelectedBudget(newlyCreated);
-        setNewBudgetName('');
-        setIsAddingBudget(false);
-      }
+      const allBudgets: Budget[] = getData('BUDGETS') || [];
+      const newBudget: Budget = {
+          id: Math.random().toString(36).substr(2, 9),
+          projectId: project.id,
+          name: newBudgetName,
+          createdAt: new Date().toISOString()
+      };
+      
+      saveData('BUDGETS', [...allBudgets, newBudget]);
+      setBudgets([...budgets, newBudget]);
+      setSelectedBudget(newBudget);
+      setNewBudgetName('');
+      setIsAddingBudget(false);
     } catch (err) {
       console.error(err);
     }
@@ -103,12 +92,15 @@ export function ProjectBudgetsModal({ project, onClose }: ProjectBudgetsModalPro
     e.stopPropagation();
     if (!window.confirm('Tem certeza que deseja excluir esta tabela orçamentária? Todos os itens dela serão perdidos.')) return;
     try {
-      const res = await fetch(`/api/budgets/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setBudgets(budgets.filter(b => b.id !== id));
-        if (selectedBudget?.id === id) {
-          setSelectedBudget(null);
-        }
+      const allBudgets: Budget[] = getData('BUDGETS') || [];
+      saveData('BUDGETS', allBudgets.filter(b => b.id !== id));
+      
+      const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+      saveData('BUDGET_ITEMS', allItems.filter(i => i.budgetId !== id));
+
+      setBudgets(budgets.filter(b => b.id !== id));
+      if (selectedBudget?.id === id) {
+        setSelectedBudget(null);
       }
     } catch (err) {
       console.error(err);
@@ -119,23 +111,22 @@ export function ProjectBudgetsModal({ project, onClose }: ProjectBudgetsModalPro
     e.preventDefault();
     if (!selectedBudget) return;
     try {
-      const res = await fetch(`/api/budgets/${selectedBudget.id}/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+      const newBudgetItem: BudgetItem = {
+          id: Math.random().toString(36).substr(2, 9),
+          budgetId: selectedBudget.id,
           description: newItemDesc,
           amount: Number(newItemAmount),
-          type: newItemType
-        })
-      });
-      if (res.ok) {
-        const created = await res.json();
-        setBudgetItems([...budgetItems, created]);
-        setIsAddingItem(false);
-        setNewItemDesc('');
-        setNewItemAmount('');
-        setNewItemType('despesa');
-      }
+          type: newItemType,
+          createdAt: new Date().toISOString()
+      };
+      saveData('BUDGET_ITEMS', [...allItems, newBudgetItem]);
+      
+      setBudgetItems([...budgetItems, newBudgetItem]);
+      setIsAddingItem(false);
+      setNewItemDesc('');
+      setNewItemAmount('');
+      setNewItemType('despesa');
     } catch (err) {
       console.error(err);
     }
@@ -143,10 +134,9 @@ export function ProjectBudgetsModal({ project, onClose }: ProjectBudgetsModalPro
 
   const handleDeleteItem = async (id: string) => {
     try {
-      const res = await fetch(`/api/budget-items/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setBudgetItems(budgetItems.filter(i => i.id !== id));
-      }
+      const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+      saveData('BUDGET_ITEMS', allItems.filter(i => i.id !== id));
+      setBudgetItems(budgetItems.filter(i => i.id !== id));
     } catch (err) {
       console.error(err);
     }

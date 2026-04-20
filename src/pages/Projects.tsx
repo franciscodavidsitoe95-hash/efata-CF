@@ -6,6 +6,7 @@ import { ProjectTasksModal, Task } from '../components/ProjectTasksModal';
 import { ProjectBudgetsModal } from '../components/ProjectBudgetsModal';
 import { ProjectAttachmentsModal } from '../components/ProjectAttachmentsModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { getData, saveData, seedStorage } from '../lib/storage';
 
 export interface Project {
   id: string;
@@ -20,6 +21,9 @@ export interface Project {
   gestorId?: string;
   gestorName?: string;
   status: 'planeado' | 'em_progresso' | 'concluido';
+  isDelivered?: boolean;
+  deliveryDate?: string;
+  expectedPaymentDate?: string;
   tasks?: Task[];
   attachments?: any[];
   createdAt: string;
@@ -57,37 +61,24 @@ export default function Projects() {
   const [category, setCategory] = useState('');
   const [gestorId, setGestorId] = useState('');
   const [status, setStatus] = useState<Project['status']>('planeado');
+  const [isDelivered, setIsDelivered] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [expectedPaymentDate, setExpectedPaymentDate] = useState('');
   
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchUsers = async () => {
-    try {
-      const res = await fetch('/api/users/list');
-      if (res.ok) {
-        const data = await res.json();
-        setAvailableUsers(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch users', err);
-    }
+    setAvailableUsers(getData('USERS'));
   };
 
   const fetchProjects = async () => {
-    try {
-      const res = await fetch('/api/projects');
-      if (res.ok) {
-        const data = await res.json();
-        setProjects(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch projects', err);
-    } finally {
-      setLoading(false);
-    }
+    setProjects(getData('PROJECTS'));
+    setLoading(false);
   };
 
   useEffect(() => {
+    seedStorage();
     fetchUsers();
     fetchProjects();
   }, []);
@@ -121,6 +112,9 @@ export default function Projects() {
       setCategory(p.category || '');
       setGestorId(p.gestorId || '');
       setStatus(p.status);
+      setIsDelivered(p.isDelivered || false);
+      setDeliveryDate(p.deliveryDate || '');
+      setExpectedPaymentDate(p.expectedPaymentDate || '');
     }
     setIsModalOpen(true);
   };
@@ -130,55 +124,48 @@ export default function Projects() {
     setSubmitError('');
     setIsSubmitting(true);
 
-    try {
-      const url = editingProject ? `/api/projects/${editingProject.id}` : '/api/projects';
-      const method = editingProject ? 'PUT' : 'POST';
-      
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name, 
-          description, 
-          client, 
-          startDate, 
-          endDate, 
-          budget: Number(budget),
-          priority,
-          category,
-          gestorId, 
-          status 
-        }),
-      });
+    const newProject: Project = {
+      id: editingProject ? editingProject.id : Math.random().toString(36).substr(2, 9),
+      name,
+      description,
+      client,
+      startDate,
+      endDate,
+      budget: Number(budget),
+      priority,
+      category,
+      gestorId,
+      status,
+      isDelivered,
+      deliveryDate,
+      expectedPaymentDate,
+      tasks: editingProject ? (editingProject.tasks || []) : [],
+      attachments: editingProject ? (editingProject.attachments || []) : [],
+      createdAt: editingProject ? editingProject.createdAt : new Date().toISOString()
+    };
 
-      if (res.ok) {
-        await fetchProjects();
-        setIsModalOpen(false);
-        addToast(editingProject ? 'Sistema atualizado!' : 'Fluxo IT iniciado!', 'info');
-      } else {
-        const data = await res.json();
-        setSubmitError(data.error || 'Erro ao processar requisição');
-      }
-    } catch (err) {
-      setSubmitError('Erro de rede. Tente novamente.');
-    } finally {
-      setIsSubmitting(false);
+    const currentProjects = getData('PROJECTS');
+    let updatedProjects;
+    
+    if (editingProject) {
+        updatedProjects = currentProjects.map((p: Project) => p.id === newProject.id ? newProject : p);
+    } else {
+        updatedProjects = [...currentProjects, newProject];
     }
+
+    saveData('PROJECTS', updatedProjects);
+    await fetchProjects();
+    setIsModalOpen(false);
+    addToast(editingProject ? 'Sistema atualizado!' : 'Fluxo IT iniciado!', 'info');
+    setIsSubmitting(false);
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchProjects();
-        addToast('Ativo descontinuado com sucesso', 'info');
-      } else {
-        const data = await res.json();
-        addToast(data.error || 'Erro ao deletar projeto', 'error');
-      }
-    } catch (err) {
-      addToast('Erro de conexão ao deletar', 'error');
-    }
+    const currentProjects = getData('PROJECTS');
+    const updatedProjects = currentProjects.filter((p: Project) => p.id !== id);
+    saveData('PROJECTS', updatedProjects);
+    await fetchProjects();
+    addToast('Ativo descontinuado com sucesso', 'info');
   };
 
   const calculateProgress = (tasks: Task[] = []) => {
@@ -449,6 +436,18 @@ export default function Projects() {
                             <option value="em_progresso">Estado: Deployment</option>
                             <option value="concluido">Estado: Operational</option>
                           </select>
+                          <label className="flex items-center space-x-2 text-[10px] font-black text-brand-slate uppercase mt-2">
+                             <input type="checkbox" checked={isDelivered} onChange={(e) => setIsDelivered(e.target.checked)} />
+                             <span>Sistema Entregue?</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="p-5 bg-brand-green/5 rounded-3xl border border-brand-green/10">
+                        <label className="block text-[10px] font-black text-brand-green uppercase tracking-widest mb-3 px-1">Datas de Entrega e Pagamento</label>
+                        <div className="space-y-3">
+                            <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="block w-full rounded-xl border-brand-green/10 bg-white px-4 py-3 text-[10px] font-black text-brand-slate focus:ring-2 focus:ring-brand-green/20 outline-none transition-all uppercase tracking-widest" />
+                            <input type="date" value={expectedPaymentDate} onChange={(e) => setExpectedPaymentDate(e.target.value)} className="block w-full rounded-xl border-brand-green/10 bg-white px-4 py-3 text-[10px] font-black text-brand-slate focus:ring-2 focus:ring-brand-green/20 outline-none transition-all uppercase tracking-widest" />
                         </div>
                       </div>
 

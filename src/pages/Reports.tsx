@@ -25,8 +25,9 @@ import type { Project } from './Projects';
 import type { Task } from '../components/ProjectTasksModal';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getData } from '../lib/storage';
 
 interface SimpleUser {
   id: string;
@@ -75,47 +76,41 @@ export default function Reports() {
     if (activeTab === 'finances') {
       fetchFinances();
     }
-  }, [financeStatusFilter, clientSearch, activeTab]);
+  }, [financeStatusFilter, clientSearch, activeTab, projects]);
 
   const fetchFinances = async () => {
-    try {
-      const query = new URLSearchParams();
-      if (financeStatusFilter !== 'all') query.append('status', financeStatusFilter);
-      if (clientSearch) query.append('client', clientSearch);
-      
-      const res = await fetch(`/api/reports/finances?${query.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setFinances(data);
-      }
-    } catch (err) {
-      console.error('Error fetching finances:', err);
-    }
+    const allItems: any[] = getData('BUDGET_ITEMS') || [];
+    
+    // Simulate finances from local storage
+    const newFinances = projects.map(p => {
+        // find all items linked to this project
+        // wait, we need to know budgetId for the project first
+        const allBudgets: any[] = getData('BUDGETS') || [];
+        const projectBudgets = allBudgets.filter(b => b.projectId === p.id).map(b => b.id);
+        
+        const projectItems = allItems.filter(i => projectBudgets.includes(i.budgetId));
+        const totalSpent = projectItems.filter(i => i.type === 'despesa').reduce((sum, i) => sum + i.amount, 0);
+        const totalRevenue = projectItems.filter(i => i.type === 'receita').reduce((sum, i) => sum + i.amount, 0);
+        
+        return {
+            projectId: p.id,
+            projectName: p.name,
+            client: p.client,
+            plannedBudget: p.budget || 0,
+            totalSpent,
+            totalRevenue,
+            balance: totalRevenue - totalSpent,
+            status: p.status
+        };
+    });
+
+    setFinances(newFinances);
   };
 
   const fetchData = async () => {
-    try {
-      const [projectsRes, usersRes] = await Promise.all([
-        fetch('/api/projects'),
-        fetch('/api/users/list')
-      ]);
-      
-      if (projectsRes.ok) {
-        const projectsData = await projectsRes.json();
-        setProjects(projectsData);
-      }
-      
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        setUsers(usersData);
-      }
-
-      await fetchFinances();
-    } catch (err) {
-      console.error('Error fetching data:', err);
-    } finally {
-      setLoading(false);
-    }
+    setProjects(getData('PROJECTS') || []);
+    setUsers(getData('USERS') || []);
+    setLoading(false);
   };
 
   const calculateProgress = (project: Project) => {

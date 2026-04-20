@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, Paperclip, Trash2, FileText, Loader2, UploadCloud } from 'lucide-react';
 import type { Project } from '../pages/Projects';
 import { useToast } from '../contexts/ToastContext';
+import { getData, saveData } from '../lib/storage';
 
 interface Attachment {
   id: string;
@@ -31,25 +32,35 @@ export function ProjectAttachmentsModal({ project, onClose, onUpdate }: ProjectA
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     setIsUploading(true);
     try {
-      const res = await fetch(`/api/projects/${project.id}/attachments`, {
-        method: 'POST',
-        body: formData,
+      // Simulate reading a file and saving its info to localStorage
+      // In a real SPA, we'd use FileReader to get a base64 string, but that might be
+      // too heavy for localStorage. For this demo, we'll store a fake URL.
+      
+      const newAttachment: Attachment = {
+          id: Math.random().toString(36).substr(2, 9),
+          originalName: file.name,
+          url: URL.createObjectURL(file), // Note: This URL will only work in the current session
+          createdAt: new Date().toISOString()
+      };
+
+      const allProjects: Project[] = getData('PROJECTS') || [];
+      const updatedProjects = allProjects.map(p => {
+          if (p.id === project.id) {
+              const projAttachments = p.attachments || [];
+              return { ...p, attachments: [...projAttachments, newAttachment] };
+          }
+          return p;
       });
-      if (res.ok) {
-        const newAttachment = await res.json();
-        setAttachments(prev => [...prev, newAttachment]);
-        addToast('Arquivo anexado com sucesso', 'success');
-        onUpdate();
-      } else {
-        addToast('Falha ao anexar arquivo', 'error');
-      }
+
+      saveData('PROJECTS', updatedProjects);
+      
+      setAttachments(prev => [...prev, newAttachment]);
+      addToast('Arquivo anexado com sucesso', 'success');
+      onUpdate();
     } catch (err) {
-      addToast('Erro de rede', 'error');
+      addToast('Erro ao gravar arquivo', 'error');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -59,18 +70,25 @@ export function ProjectAttachmentsModal({ project, onClose, onUpdate }: ProjectA
   const handleDelete = async (attachmentId: string) => {
     if (!window.confirm('Tem certeza que deseja apagar este arquivo?')) return;
     try {
-      const res = await fetch(`/api/projects/${project.id}/attachments/${attachmentId}`, { method: 'DELETE' });
-      if (res.ok) {
-        setAttachments(prev => prev.filter(a => a.id !== attachmentId));
-        addToast('Arquivo apagado', 'success');
-        onUpdate();
-      } else {
-        addToast('Falha ao apagar', 'error');
-      }
+      const allProjects: Project[] = getData('PROJECTS') || [];
+      const updatedProjects = allProjects.map(p => {
+          if (p.id === project.id) {
+              const projAttachments = p.attachments || [];
+              return { ...p, attachments: projAttachments.filter(a => a.id !== attachmentId) };
+          }
+          return p;
+      });
+
+      saveData('PROJECTS', updatedProjects);
+
+      setAttachments(prev => prev.filter(a => a.id !== attachmentId));
+      addToast('Arquivo apagado', 'success');
+      onUpdate();
     } catch (err) {
       addToast('Erro ao apagar arquivo', 'error');
     }
   };
+
 
   return (
     <div className="relative z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">

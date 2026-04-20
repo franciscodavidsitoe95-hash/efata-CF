@@ -11,6 +11,9 @@ export interface Project {
   gestorId?: string;
   gestorName?: string;
   status: 'planeado' | 'em_progresso' | 'concluido';
+  isDelivered?: boolean;
+  deliveryDate?: string;
+  expectedPaymentDate?: string;
   tasks?: any[];
   attachments?: any[];
   createdAt: string;

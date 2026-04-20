@@ -17,6 +17,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import type { Project, Budget, BudgetItem } from '../types';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { getData, saveData } from '../lib/storage';
 
 export default function Budgets() {
   const { user } = useAuth();
@@ -62,63 +63,42 @@ export default function Budgets() {
   }, [selectedBudgetId]);
 
   const fetchProjects = async () => {
-    try {
-      const res = await fetch('/api/projects');
-      if (res.ok) {
-        const data = await res.json();
-        setProjects(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    setProjects(getData('PROJECTS'));
+    setLoading(false);
   };
 
   const fetchBudgets = async (projectId: string) => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}/budgets`);
-      if (res.ok) {
-        const data = await res.json();
-        setBudgets(data);
-        if (data.length > 0) {
-          setSelectedBudgetId(data[0].id);
-        } else {
-          setSelectedBudgetId(null);
-        }
-      }
-    } catch (err) {
-      console.error(err);
+    const allBudgets: Budget[] = getData('BUDGETS') || [];
+    const projectBudgets = allBudgets.filter(b => b.projectId === projectId);
+    setBudgets(projectBudgets);
+    if (projectBudgets.length > 0) {
+      setSelectedBudgetId(projectBudgets[0].id);
+    } else {
+      setSelectedBudgetId(null);
     }
   };
 
   const fetchItems = async (budgetId: string) => {
     setItemsLoading(true);
-    try {
-      const res = await fetch(`/api/budgets/${budgetId}/items`);
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setItemsLoading(false);
-    }
+    const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+    const budgetItems = allItems.filter(i => i.budgetId === budgetId);
+    setItems(budgetItems);
+    setItemsLoading(false);
   };
 
   const handleCreateBudget = async () => {
     if (!selectedProjectId) return;
     try {
-      const res = await fetch(`/api/projects/${selectedProjectId}/budgets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Orçamento Base' })
-      });
-      if (res.ok) {
-        addToast('Orçamento criado com sucesso', 'success');
-        fetchBudgets(selectedProjectId);
-      }
+      const allBudgets: Budget[] = getData('BUDGETS') || [];
+      const newBudget: Budget = {
+          id: Math.random().toString(36).substr(2, 9),
+          projectId: selectedProjectId,
+          name: 'Orçamento Base',
+          createdAt: new Date().toISOString()
+      };
+      saveData('BUDGETS', [...allBudgets, newBudget]);
+      addToast('Orçamento criado com sucesso', 'success');
+      fetchBudgets(selectedProjectId);
     } catch (err) {
       addToast('Erro ao criar orçamento', 'error');
     }
@@ -128,17 +108,20 @@ export default function Budgets() {
     e.preventDefault();
     if (!selectedBudgetId) return;
     try {
-      const res = await fetch(`/api/budgets/${selectedBudgetId}/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem)
-      });
-      if (res.ok) {
-        addToast('Item adicionado', 'success');
-        setShowItemForm(false);
-        setNewItem({ description: '', amount: '', type: 'despesa' });
-        fetchItems(selectedBudgetId);
-      }
+      const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+      const newBudgetItem: BudgetItem = {
+          id: Math.random().toString(36).substr(2, 9),
+          budgetId: selectedBudgetId,
+          description: newItem.description,
+          amount: Number(newItem.amount),
+          type: newItem.type,
+          createdAt: new Date().toISOString()
+      };
+      saveData('BUDGET_ITEMS', [...allItems, newBudgetItem]);
+      addToast('Item adicionado', 'success');
+      setShowItemForm(false);
+      setNewItem({ description: '', amount: '', type: 'despesa' });
+      fetchItems(selectedBudgetId);
     } catch (err) {
       addToast('Erro ao adicionar item', 'error');
     }
@@ -146,17 +129,16 @@ export default function Budgets() {
 
   const handleDeleteItem = async (itemId: string) => {
     try {
-      const res = await fetch(`/api/budget-items/${itemId}`, { method: 'DELETE' });
-      if (res.ok) {
-        addToast('Item removido', 'success');
-        if (selectedBudgetId) fetchItems(selectedBudgetId);
-      } else {
-        addToast('Erro ao remover item', 'error');
-      }
+      const allItems: BudgetItem[] = getData('BUDGET_ITEMS') || [];
+      const updatedItems = allItems.filter(i => i.id !== itemId);
+      saveData('BUDGET_ITEMS', updatedItems);
+      addToast('Item removido', 'success');
+      if (selectedBudgetId) fetchItems(selectedBudgetId);
     } catch (err) {
       addToast('Erro ao remover item', 'error');
     }
   };
+
 
   const totalRevenue = items.filter(i => i.type === 'receita').reduce((sum, i) => sum + i.amount, 0);
   const totalExpense = items.filter(i => i.type === 'despesa').reduce((sum, i) => sum + i.amount, 0);
