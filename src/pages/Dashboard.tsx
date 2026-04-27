@@ -285,6 +285,15 @@ export default function Dashboard() {
       </motion.section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
+        <motion.div variants={itemVariants} className="lg:col-span-12 bg-white p-6 rounded-3xl border border-brand-cream-dark flex items-center justify-between shadow-sm">
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quick Actions</div>
+          <div className="flex gap-6">
+            <button onClick={() => navigate('/projects')} className="text-[10px] font-black text-brand-indigo hover:text-brand-blue hover:underline uppercase tracking-widest transition-all">New Project</button>
+            <button onClick={() => navigate('/budgets')} className="text-[10px] font-black text-brand-indigo hover:text-brand-blue hover:underline uppercase tracking-widest transition-all">Manage Budget</button>
+            <button onClick={() => navigate('/logs')} className="text-[10px] font-black text-brand-indigo hover:text-brand-blue hover:underline uppercase tracking-widest transition-all">View Logs</button>
+          </div>
+        </motion.div>
+
         <motion.div variants={itemVariants} className="lg:col-span-8 bg-white p-8 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.05)] border border-brand-cream-dark flex flex-col h-[450px]">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center space-x-3">
@@ -427,7 +436,7 @@ export default function Dashboard() {
            <div className="relative z-10 flex flex-col h-full justify-between">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-3">Kernel Health Index</p>
+                  <p onClick={() => addToast('System Health: 99.4% (Optimal)', 'info')} className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-3 cursor-pointer hover:text-white transition-colors">Kernel Health Index ⓘ</p>
                   <p className="text-5xl font-black tracking-tighter">99.4<span className="text-brand-green text-xl font-bold ml-3 italic">SYNC</span></p>
                 </div>
                 <div className="flex space-x-2">

@@ -15,6 +15,12 @@ export default function Preferences() {
     const newPrefs = { ...prefs, theme: newTheme };
     setPrefs(newPrefs);
     saveData('PREFERENCES', newPrefs);
+    
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   const toggleNotifications = () => {

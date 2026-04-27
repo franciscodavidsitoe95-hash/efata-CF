@@ -55,6 +55,10 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 export default function App() {
   useEffect(() => {
     seedStorage();
+    const prefs = JSON.parse(localStorage.getItem('efata_preferences') || '{}');
+    if (prefs.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
   }, []);
 
   return (
