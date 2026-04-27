@@ -7,7 +7,9 @@ const STORAGE_KEYS = {
   BUDGETS: 'efata_budgets',
   BUDGET_ITEMS: 'efata_budget_items',
   PREFERENCES: 'efata_preferences',
-  LOGS: 'efata_logs'
+  LOGS: 'efata_logs',
+  REPORTS: 'efata_reports',
+  MESSAGES: 'efata_messages'
 };
 
 const initialProjects: Project[] = [
@@ -244,6 +246,12 @@ export const seedStorage = () => {
   if (!localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS) || JSON.parse(localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS) || '[]').length === 0) {
     localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(initialBudgetItems));
   }
+  if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) {
+    localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.MESSAGES)) {
+    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify([]));
+  }
   if (!localStorage.getItem(STORAGE_KEYS.LOGS)) {
     const mockLogs = [
       {
@@ -282,7 +290,11 @@ export const seedStorage = () => {
 
 export const getData = (key: keyof typeof STORAGE_KEYS) => {
   const data = localStorage.getItem(STORAGE_KEYS[key]);
-  return data ? JSON.parse(data) : [];
+  if (!data) {
+     if (key === 'PREFERENCES') return { theme: 'light', notifications: true };
+     return [];
+  }
+  return JSON.parse(data);
 };
 
 export const saveData = (key: keyof typeof STORAGE_KEYS, data: any) => {

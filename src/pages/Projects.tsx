@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, X, Loader2, FolderOpen, Calendar, User as UserIcon, ListTodo, DollarSign, Paperclip, Server, Shield, Globe } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Loader2, FolderOpen, Calendar, User as UserIcon, ListTodo, DollarSign, Paperclip, Server, Shield, Globe, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { ProjectTasksModal, Task } from '../components/ProjectTasksModal';
 import { ProjectBudgetsModal } from '../components/ProjectBudgetsModal';
 import { ProjectAttachmentsModal } from '../components/ProjectAttachmentsModal';
+import { ProjectReportsModal } from '../components/ProjectReportsModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getData, saveData, seedStorage, logAction } from '../lib/storage';
 
@@ -46,6 +47,7 @@ export default function Projects() {
   const [tasksModalProject, setTasksModalProject] = useState<Project | null>(null);
   const [budgetsModalProject, setBudgetsModalProject] = useState<Project | null>(null);
   const [attachmentsModalProject, setAttachmentsModalProject] = useState<Project | null>(null);
+  const [reportsModalProject, setReportsModalProject] = useState<Project | null>(null);
   
   // Confirm Dialog State
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -330,7 +332,7 @@ export default function Projects() {
               </div>
 
               <div className="mt-auto bg-brand-cream-dark/30 border-t border-brand-cream-dark p-3">
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-6 gap-2">
                   <button onClick={() => setTasksModalProject(project)} className="flex flex-col items-center justify-center p-3 rounded-2xl hover:bg-white hover:text-brand-indigo text-gray-400 transition-all group/btn">
                     <ListTodo className="h-5 w-5 mb-1 group-hover/btn:scale-110 transition-transform" />
                     <span className="text-[8px] font-black uppercase tracking-tighter">Tasks</span>
@@ -342,6 +344,10 @@ export default function Projects() {
                   <button onClick={() => setAttachmentsModalProject(project)} className="flex flex-col items-center justify-center p-3 rounded-2xl hover:bg-white hover:text-brand-orange text-gray-400 transition-all group/btn">
                     <Paperclip className="h-5 w-5 mb-1 group-hover/btn:scale-110 transition-transform" />
                     <span className="text-[8px] font-black uppercase tracking-tighter">Data</span>
+                  </button>
+                  <button onClick={() => setReportsModalProject(project)} className="flex flex-col items-center justify-center p-3 rounded-2xl hover:bg-white hover:text-brand-red text-gray-400 transition-all group/btn">
+                    <FileText className="h-5 w-5 mb-1 group-hover/btn:scale-110 transition-transform" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">Report</span>
                   </button>
                   <button onClick={() => openModal(project)} className="flex flex-col items-center justify-center p-3 rounded-2xl hover:bg-white hover:text-brand-indigo text-gray-400 transition-all group/btn">
                     <Pencil className="h-5 w-5 mb-1 group-hover/btn:scale-110 transition-transform" />
@@ -382,6 +388,13 @@ export default function Projects() {
           project={attachmentsModalProject}
           onClose={() => setAttachmentsModalProject(null)}
           onUpdate={fetchProjects}
+        />
+      )}
+
+      {reportsModalProject && (
+        <ProjectReportsModal
+          project={reportsModalProject}
+          onClose={() => setReportsModalProject(null)}
         />
       )}
 

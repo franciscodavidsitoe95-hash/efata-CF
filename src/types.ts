@@ -19,6 +19,26 @@ export interface Project {
   createdAt: string;
 }
 
+export interface ProjectReport {
+  id: string;
+  projectId: string;
+  userId: string;
+  userName: string;
+  date: string;
+  whatDone: string;
+  whatNotDone: string;
+  notes: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  type: 'text' | 'image' | 'audio';
+  createdAt: string;
+}
+
 export interface Budget {
   id: string;
   projectId: string;

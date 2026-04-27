@@ -15,7 +15,8 @@ import {
   Activity,
   ShieldAlert,
   ShieldCheck,
-  Wallet
+  Wallet,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -44,6 +45,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () =>
     { label: 'Infraestrutura', path: '/projects', icon: Server, color: 'text-brand-indigo' },
     { label: 'Orçamentos', path: '/budgets', icon: Wallet, color: 'text-brand-green' },
     { label: 'Intelligence', path: '/reports', icon: BarChart3, color: 'text-brand-orange' },
+    { label: 'Chat Interno', path: '/chat', icon: MessageSquare, color: 'text-brand-blue' },
   ];
 
   const adminItems = [];

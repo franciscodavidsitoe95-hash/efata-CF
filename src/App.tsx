@@ -18,6 +18,7 @@ import Projects from './pages/Projects';
 import Logs from './pages/Logs';
 import Reports from './pages/Reports';
 import Budgets from './pages/Budgets';
+import Chat from './pages/Chat';
 import Preferences from './pages/Preferences';
 
 function MainLayout({ children }: { children: React.ReactNode }) {
@@ -92,6 +93,15 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <MainLayout><Budgets /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="/chat" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><Chat /></MainLayout>
                 </ProtectedRoute>
               } 
             />
